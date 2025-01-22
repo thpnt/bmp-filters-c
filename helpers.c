@@ -140,5 +140,104 @@ void blur(int height, int width, RGBTRIPLE image[height][width])
 // Detect edges
 void edges(int height, int width, RGBTRIPLE image[height][width])
 {
+    // Init kernels
+    int kx[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
+    int ky[3][3] = {{-1, -2, -1},{ 0, 0, 0},{1, 2, 1}};
+
+
+    // Allocate memory for temp img
+    RGBTRIPLE (*temp_img)[width] = calloc(height, sizeof(RGBTRIPLE) * width);
+
+    // Memory allocation error check
+    if (temp_img == NULL)
+    {
+        return;
+    }
+
+
+    // Loop through image pixels
+    for (int h = 0; h<height; h++)
+    {
+        for (int w = 0; w<width; w++)
+        {
+            // Instantiate gx and gy values
+            int gx_blue = 0;
+            int gx_green = 0;
+            int gx_red = 0;
+            int gy_blue = 0;
+            int gy_green = 0;
+            int gy_red = 0;
+
+            // Visit neighboring pixels and increment gx and gy
+            for (int nh = -1; nh < 2; nh++)
+            {
+                // Check bounds
+                if ((h + nh < 0) || (h + nh >= height)) // if out of bounds
+                {
+                    continue;
+                }
+
+                else for (int nw = -1; nw<2; nw++)
+                {
+                    // check bounds
+                    if ((w + nw < 0) || (w + nw >= width)) // If out of bounds
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        gx_blue += image[h + nh][w + nw].rgbtBlue * kx[nh+1][nw+1];
+                        gx_green += image[h + nh][w + nw].rgbtGreen * kx[nh+1][nw+1];
+                        gx_red += image[h + nh][w + nw].rgbtRed * kx[nh+1][nw+1];
+
+                        gy_blue += image[h + nh][w + nw].rgbtBlue * ky[nh+1][nw+1];
+                        gy_green += image[h + nh][w + nw].rgbtGreen * ky[nh+1][nw+1];
+                        gy_red += image[h + nh][w + nw].rgbtRed * ky[nh+1][nw+1];
+                    }
+                }
+            }
+
+            // Compute final pixel value
+            int final_blue = sqrt(pow(gx_blue, 2) + pow(gy_blue, 2));
+            int final_green = sqrt(pow(gx_green, 2) + pow(gy_green, 2));
+            int final_red = sqrt(pow(gx_red, 2) + pow(gy_red, 2));
+
+
+            // Clip value to 255
+            if (final_blue > 255)
+            {
+                final_blue = 255;
+            }
+            if (final_green > 255)
+            {
+                final_green = 255;
+            }
+            if (final_red > 255)
+            {
+                final_red = 255;
+            }
+
+            // Assign new values to temporary image
+            temp_img[h][w].rgbtBlue = final_blue;
+            temp_img[h][w].rgbtGreen = final_green;
+            temp_img[h][w].rgbtRed = final_red;
+        }
+
+    }
+
+    // Assign temporary image values to image
+    for (int h = 0; h<height; h++)
+    {
+        for (int w = 0; w<width; w++)
+        {
+            image[h][w] = temp_img[h][w];
+        }
+    }
+
+
+    // Free temp img
+    free(temp_img);
+
+
     return;
 }
